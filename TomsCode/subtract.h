@@ -21,7 +21,7 @@ int getMantissaZeros(int characteristic, int mantissa, int num1, int num2, int d
 
 int getDigitArray(int number, char results[], int numDigits, int iterator);
 
-void appendData(int characteristic, int mantissa, int numZeros, char results[], int length);
+bool appendData(int characteristic, int mantissa, int numZeros, char results[], int length);
 
 bool subtract_helper(int denominator, int char1, int char2, int num1, int num2, int factor1, int factor2, char result[], int len);
 

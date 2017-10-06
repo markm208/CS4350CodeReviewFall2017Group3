@@ -11,19 +11,34 @@
 using namespace std;
 
 //---------------------------------------------------------------------------------------------------------------------------------------
+//									                 Check Mantissa
+//---------------------------------------------------------------------------------------------------------------------------------------
+bool paramsAreGood(int num1, int num2, int den1, int den2) {
+    
+    bool goodParams = true;
+    
+    if(num1 < 0 || num2 < 0) {
+        cout << "Mantissa's must be positive integers. Results array was not filled." << endl;
+        goodParams = false;
+    }
+    
+    if(den1 < 0 || den2 < 0) {
+        cout << "Denominator's must negative integers. Results array was not filled" << endl;
+        goodParams = false;
+    }
+    
+    return goodParams;
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------------
 //									                 Compute Difference
 //---------------------------------------------------------------------------------------------------------------------------------------
 int computeDifference(int char1, int char2, int denominator, int num1, int num2) {
     
-    // Convert numbers (num1, num2) to improper numerators based on denominator
-    int number1 = (char1 * denominator) + num1;
-    int number2 = (char2 * denominator) + num2;
+    // Convert numbers to improper numerators; adjust if characteristics are negative
+    int number1 = (char1 < 0) ? (char1 * denominator - num1) : (char1 * denominator + num1);
     
-    // If characterisitic is negative, you must subtract to get correct improper fraction
-    if(char1 < 0)
-        number1 = (char1 * denominator) - num1;
-    if(char2 < 0)
-        number2 = (char2 * denominator) - num2;
+    int number2 = (char2 < 0) ? (char2 * denominator - num2) : (char2 * denominator + num2);
     
     return number1 - number2;
 }
@@ -46,8 +61,7 @@ int getMantissa(int difference, int denominator) {
     
     int mantissa = difference % denominator;
     
-    if(mantissa < 0)
-        mantissa *= -1;
+    mantissa = (mantissa < 0) ? mantissa * -1 : mantissa;
     
     return mantissa;
 }
@@ -79,19 +93,6 @@ int getMantissaZeros(int characteristic, int mantissa, int num1, int num2, int d
     
     // Find the number of digits remaining -- this is the number of zeros
     int totalNumZeros = numDiffDigits - manNumDigits - charNumDigits - 1;
-    
-    // Add leading zeros to print out statement if needed
-    if(num1 < 10 and num2 < 10) {
-        cout << characteristic << '.';
-        
-        for(int i = 0; i < totalNumZeros; i++)
-            cout << 0;
-        
-        cout << mantissa << endl;
-    }
-    else {
-        cout << characteristic << '.' << mantissa << endl;
-    }
     
     return totalNumZeros;
     
@@ -130,11 +131,11 @@ int getDigitArray(int number, char results[], int numDigits, int iterator)
 //---------------------------------------------------------------------------------------------------------------------------------------
 //                                                      Append Data
 //---------------------------------------------------------------------------------------------------------------------------------------
-void appendData(int characteristic, int mantissa, int numZeros, char results[], int length) {
+bool appendData(int characteristic, int mantissa, int numZeros, char results[], int length) {
     
     int start_index = 0;
     
-    if((characteristic < 0) | (characteristic == 0 && mantissa < 0)) {
+    if((characteristic < 0) || (characteristic == 0 && mantissa < 0)) {
         // 45 in ASCII is negative sign
         results[0] = 45;
         start_index = 1;
@@ -160,6 +161,26 @@ void appendData(int characteristic, int mantissa, int numZeros, char results[], 
     
     // End character results with NULL terminator
     results[end_index] = '\0';
+    
+    return true;
+}
+
+//---------------------------------------------------------------------------------------------------------------------------------------
+//                                                         Print Data
+//---------------------------------------------------------------------------------------------------------------------------------------
+void printDifference(int num1, int num2, int characteristic, int mantissa, int numLeadingZeros) {
+    
+    if(num1 < 10 and num2 < 10) {
+        cout << characteristic << '.';
+        
+        for(int i = 0; i < numLeadingZeros; i++)
+            cout << 0;
+        
+        cout << mantissa << endl;
+    }
+    else {
+        cout << characteristic << '.' << mantissa << endl;
+    }
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------
@@ -167,7 +188,7 @@ void appendData(int characteristic, int mantissa, int numZeros, char results[], 
 //---------------------------------------------------------------------------------------------------------------------------------------
 
 
-bool subtract_helper(int denominator, int char1, int char2, int num1, int num2, int factor1, int factor2, char result[], int len) {
+bool subtractHelper(int denominator, int char1, int char2, int num1, int num2, int factor1, int factor2, char result[], int len) {
     
     int difference = computeDifference(char1, char2, denominator, num1*factor1, num2*factor2);
     
@@ -176,13 +197,15 @@ bool subtract_helper(int denominator, int char1, int char2, int num1, int num2, 
     int mantissa = getMantissa(difference, denominator);
     
     //Check if mantissa has leading zeros
-    int numberOfZeros = getMantissaZeros(characteristic, mantissa, num1, num2, difference);
+    int numLeadingZeros = getMantissaZeros(characteristic, mantissa, num1, num2, difference);
     
     //Append data to char results
-    appendData(characteristic, mantissa, numberOfZeros, result, len);
+    bool wasAppended = appendData(characteristic, mantissa, numLeadingZeros, result, len);
+    
+    printDifference(num1, num2, characteristic, mantissa, numLeadingZeros);
     
     //Note that transaction was a success
-    return true;
+    return wasAppended;
     
 }
 
@@ -196,19 +219,23 @@ bool subtract(int char1, int num1, int den1,  int char2, int num2, int den2, cha
     
     bool answerSubtracted = false;
     
+    if(!paramsAreGood(num1, num2, den1, den2)) {
+        return false;
+    }
+    
     if(den1 == den2) {
         
         int factor1 = 1;
         int factor2 = 1;
         
-        answerSubtracted = subtract_helper(den1, char1, char2, num1, num2, factor1, factor2, result, len);
+        answerSubtracted = subtractHelper(den1, char1, char2, num1, num2, factor1, factor2, result, len);
     }
     else if(den1 > den2) {
         
         int factor1 = 1;
         int factor2 = den1 / den2;
         
-        answerSubtracted = subtract_helper(den1, char1, char2, num1, num2, factor1, factor2, result, len);
+        answerSubtracted = subtractHelper(den1, char1, char2, num1, num2, factor1, factor2, result, len);
     }
     else if(den1 < den2)
     {
@@ -216,7 +243,7 @@ bool subtract(int char1, int num1, int den1,  int char2, int num2, int den2, cha
         int factor1 = den2 / den1;
         int factor2 = 1;
      
-        answerSubtracted = subtract_helper(den2, char1, char2, num1, num2, factor1, factor2, result, len);
+        answerSubtracted = subtractHelper(den2, char1, char2, num1, num2, factor1, factor2, result, len);
     }
     
     return answerSubtracted;
